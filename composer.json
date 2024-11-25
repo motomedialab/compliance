@@ -1,0 +1,53 @@
+{
+  "name": "motomedialab/compliance",
+  "description": "A package for enforcing GDPR compliance rules",
+  "type": "library",
+  "license": "MIT",
+  "keywords": [
+    "motomedialab",
+    "compliance",
+    "gdpr",
+    "consent"
+  ],
+  "authors": [
+    {
+      "name": "Chris Page",
+      "email": "chris@motocom.co.uk"
+    }
+  ],
+  "require": {
+    "php": "^8.2",
+    "laravel/framework": "^10.0|^11.0"
+  },
+  "require-dev": {
+    "pestphp/pest": "^2.0|^3.0",
+    "orchestra/testbench": "^8.0|^9.0",
+    "laravel/pint": "^1.18",
+    "larastan/larastan": "^2.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Motomedialab\\Compliance\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Motomedialab\\Compliance\\": "src/",
+      "Motomedialab\\Compliance\\Tests\\": "tests/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Motomedialab\\Compliance\\Providers\\ComplianceServiceProvider"
+      ]
+    }
+  },
+  "minimum-stability": "stable",
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
+  }
+}
