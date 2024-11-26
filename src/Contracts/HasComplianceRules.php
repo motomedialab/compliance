@@ -16,7 +16,7 @@ interface HasComplianceRules
      * The query builder used to find non-compliant models / models
      * that should be deleted.
      */
-    public function complianceQueryBuilder(): Builder;
+    public function complianceQueryBuilder(Builder|null $builder = null): Builder;
 
     /**
      * The default column to use for compliance checks.

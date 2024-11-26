@@ -12,7 +12,7 @@ use Motomedialab\Compliance\Models\ComplianceCheck;
 
 /**
  * @mixin Model
- * @mixin ComplianceRules
+ * @mixin HasComplianceRules
  */
 trait ComplianceRules
 {
@@ -23,9 +23,9 @@ trait ComplianceRules
         });
     }
 
-    public function complianceQueryBuilder(): Builder
+    public function complianceQueryBuilder(Builder|null $builder = null): Builder
     {
-        return $this->newQuery()
+        return ($builder ?? $this->newQuery())
             ->where($this->complianceCheckColumn(), '<', now()->subDays($this->complianceDeleteAfterDays()));
     }
 

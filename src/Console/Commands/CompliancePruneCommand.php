@@ -2,7 +2,9 @@
 
 namespace Motomedialab\Compliance\Console\Commands;
 
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Motomedialab\Compliance\Contracts\HasComplianceRules;
+use Motomedialab\Compliance\Models\ComplianceCheck;
 use Motomedialab\Compliance\Repositories\CompliantModelsRepository;
 
 class CompliancePruneCommand extends Command
@@ -14,23 +16,28 @@ class CompliancePruneCommand extends Command
     {
         $this->getModels()->each(function (string $model) use ($repository): void {
             $count = 0;
-            $models = $repository->getModelsByClassName($model, whereHasCheck: true);
 
-            if ($models->isEmpty()) {
+            $records = ComplianceCheck::query()
+                ->where('model_type', Relation::getMorphAlias($model))
+                ->where('deletion_date', '<', now())
+                ->with(['model' => fn ($query) => (new $model)->complianceQueryBuilder($query)])
+                ->cursor();
+
+            if ($records->isEmpty()) {
                 $this->info('No records to prune for ' . $model);
                 return;
             }
 
             $this->info('Processing ' . $model . ' records');
 
-            $this->withProgressBar($models, function (HasComplianceRules $model) use (&$count): void {
-                if ($model->complianceMeetsDeletionCriteria()) {
+            $this->withProgressBar($records, function (ComplianceCheck $record) use (&$count): void {
+                if ($record->model instanceof HasComplianceRules && $record->model->complianceMeetsDeletionCriteria()) {
                     ++$count;
-                    $model->complianceDeleteRecord();
+                    $record->model->complianceDeleteRecord();
                     return;
                 }
 
-                $model->complianceCheckRecord()->delete();
+                $record->delete();
             });
 
             $this->info('Deleted ' . $count . ' non-compliant ' . $model . ' records');
