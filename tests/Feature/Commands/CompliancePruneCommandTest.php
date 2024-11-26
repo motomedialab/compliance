@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
@@ -44,6 +45,20 @@ it('it will check for compliance once again before deleting', function () {
         ->assertExitCode(0);
 
     Event::assertNotDispatched(ComplianceDeleting::class);
+});
+
+it('can handle morph aliases', function () {
+
+    Relation::morphMap([
+        'test' => TestModel::class,
+    ]);
+
+    TestModel::factory()->deletable()->create(['allow_delete' => true]);
+    ComplianceCheck::create(['model_type' => 'test', 'model_id' => 1, 'deletion_date' => now()->subDay()]);
+
+    $this->artisan(CompliancePruneCommand::class)
+        ->expectsOutput('Deleted 1 non-compliant ' . TestModel::class . ' records')
+        ->assertExitCode(0);
 });
 
 it('it will delete and emit event for deleted records', function () {
