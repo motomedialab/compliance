@@ -126,13 +126,15 @@ class User implements HasComplianceRules
     
     // the default column to check against
     // (irrelevant if you are already overriding complianceQueryBuilder)
-    public function complianceCheckColumn() : string{
+    public function complianceCheckColumn() : string
+    {
         return 'last_login_at';
     }
     
     // manipulate the number of days before a record is marked for deletion
     // (irrelevant if you are already overriding complianceQueryBuilder)
-    public function complianceDeleteAfterDays() : int{
+    public function complianceDeleteAfterDays() : int
+    {
        return 365;
     }
     
