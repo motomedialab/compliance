@@ -26,7 +26,7 @@ beforeEach(function () {
 
 it('wont delete any records when there arent any', function () {
     $this->artisan(CompliancePruneCommand::class)
-        ->expectsOutput('No records to prune')
+        ->expectsOutput('No records to prune for ' . TestModel::class)
         ->assertExitCode(0);
 });
 
@@ -38,7 +38,7 @@ it('it will check for compliance once again before deleting', function () {
     ComplianceCheck::create(['model_type' => TestModel::class, 'model_id' => 1, 'deletion_date' => now()->subDay()]);
 
     $this->artisan(CompliancePruneCommand::class)
-        ->expectsOutput('Deleted 0 non-compliant records')
+        ->expectsOutput('Deleted 0 non-compliant ' . TestModel::class . ' records')
         ->assertExitCode(0);
 
     Event::assertNotDispatched(ComplianceDeleting::class);
@@ -52,7 +52,7 @@ it('it will delete and emit event for deleted records', function () {
     ComplianceCheck::create(['model_type' => TestModel::class, 'model_id' => 1, 'deletion_date' => now()->subDay()]);
 
     $this->artisan(CompliancePruneCommand::class)
-        ->expectsOutput('Deleted 1 non-compliant records')
+        ->expectsOutput('Deleted 1 non-compliant ' . TestModel::class . ' records')
         ->assertExitCode(0);
 
     Event::assertDispatchedTimes(ComplianceDeleting::class);

@@ -2,44 +2,39 @@
 
 namespace Motomedialab\Compliance\Console\Commands;
 
-use Illuminate\Console\Command;
 use Motomedialab\Compliance\Contracts\HasComplianceRules;
-use Motomedialab\Compliance\Models\ComplianceCheck;
+use Motomedialab\Compliance\Repositories\CompliantModelsRepository;
 
 class CompliancePruneCommand extends Command
 {
     protected $signature = 'compliance:prune';
     protected $description = 'Prune models that have been marked for compliance deletion';
 
-    public function handle(): int
+    public function handle(CompliantModelsRepository $repository): int
     {
-        $count = 0;
+        $this->getModels()->each(function (string $model) use ($repository): void {
+            $count = 0;
+            $models = $repository->getModelsByClassName($model, whereHasCheck: true);
 
-        $records = ComplianceCheck::query()
-            ->where('deletion_date', '<=', now())
-            ->with('model')
-            ->cursor();
+            if ($models->isEmpty()) {
+                $this->info('No records to prune for ' . $model);
+                return;
+            }
 
-        if ($records->isEmpty()) {
-            $this->info('No records to prune');
-            return 0;
-        }
+            $this->info('Processing ' . $model . ' records');
 
-        $this->info('Processing ' . $records->count() . ' records');
-
-        $records
-            ->each(function (ComplianceCheck $check) use (&$count): void {
-                if ($check->model instanceof HasComplianceRules && $check->model->complianceMeetsDeletionCriteria()) {
-                    $check->model->complianceDeleteRecord();
+            $this->withProgressBar($models, function (HasComplianceRules $model) use (&$count): void {
+                if ($model->complianceMeetsDeletionCriteria()) {
                     ++$count;
+                    $model->complianceDeleteRecord();
                     return;
                 }
 
-                // if we reach here, we can delete this compliance check.
-                $check->delete();
+                $model->complianceCheckRecord()->delete();
             });
 
-        $this->info('Deleted ' . $count . ' non-compliant records');
+            $this->info('Deleted ' . $count . ' non-compliant ' . $model . ' records');
+        });
         return 0;
     }
 }
