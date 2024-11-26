@@ -45,7 +45,7 @@ class CompliancePruneCommand extends Command
         return 0;
     }
 
-    protected function getMorphAlias(string $model): int|string
+    protected function getMorphAlias(string $model): string
     {
         $map = array_flip(Relation::morphMap());
 

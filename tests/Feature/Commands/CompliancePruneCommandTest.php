@@ -10,6 +10,10 @@ use Motomedialab\Compliance\Models\ComplianceCheck;
 use Motomedialab\Compliance\Tests\Stubs\Models\TestModel;
 
 beforeEach(function () {
+
+    // clear our morph map
+    Relation::morphMap([], false);
+
     config()->set('compliance.models', [
         TestModel::class => [
             'column' => 'created_at',
