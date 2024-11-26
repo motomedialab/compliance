@@ -5,16 +5,16 @@ namespace Motomedialab\Compliance\Console\Commands;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Motomedialab\Compliance\Contracts\HasComplianceRules;
 use Motomedialab\Compliance\Models\ComplianceCheck;
-use Motomedialab\Compliance\Repositories\CompliantModelsRepository;
+use Motomedialab\Compliance\Repositories\ComplianceModelsRepository;
 
 class CompliancePruneCommand extends Command
 {
     protected $signature = 'compliance:prune';
     protected $description = 'Prune models that have been marked for compliance deletion';
 
-    public function handle(CompliantModelsRepository $repository): int
+    public function handle(ComplianceModelsRepository $repository): int
     {
-        $this->getModels()->each(function (string $model) use ($repository): void {
+        $this->getModels()->each(function (string $model): void {
             $count = 0;
 
             $records = ComplianceCheck::query()

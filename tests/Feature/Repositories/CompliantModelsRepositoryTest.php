@@ -3,7 +3,7 @@
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\LazyCollection;
-use Motomedialab\Compliance\Repositories\CompliantModelsRepository;
+use Motomedialab\Compliance\Repositories\ComplianceModelsRepository;
 use Motomedialab\Compliance\Tests\Stubs\Models\TestModel;
 
 beforeEach(function () {
@@ -23,7 +23,7 @@ it('can get a count of old records', function () {
     TestModel::factory()->deletable()->create();
 
     // call our action
-    $collection = (new CompliantModelsRepository())->getModelsByClassName(TestModel::class);
+    $collection = (new ComplianceModelsRepository())->getModelsByClassName(TestModel::class);
 
     // check we got one returned record
     expect($collection)

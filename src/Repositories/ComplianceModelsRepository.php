@@ -6,7 +6,7 @@ use Exception;
 use Illuminate\Support\LazyCollection;
 use Motomedialab\Compliance\Contracts\HasComplianceRules;
 
-class CompliantModelsRepository
+class ComplianceModelsRepository
 {
     /**
      * @throws Exception

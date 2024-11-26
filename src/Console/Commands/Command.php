@@ -4,11 +4,11 @@ namespace Motomedialab\Compliance\Console\Commands;
 
 use Illuminate\Console\Command as BaseCommand;
 use Illuminate\Support\Collection;
-use Motomedialab\Compliance\Repositories\CompliantModelsRepository;
+use Motomedialab\Compliance\Repositories\ComplianceModelsRepository;
 
 abstract class Command extends BaseCommand
 {
-    abstract public function handle(CompliantModelsRepository $repository): int;
+    abstract public function handle(ComplianceModelsRepository $repository): int;
 
     protected function getModels(): Collection
     {

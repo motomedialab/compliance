@@ -4,14 +4,14 @@ namespace Motomedialab\Compliance\Console\Commands;
 
 use Exception;
 use Motomedialab\Compliance\Contracts\HasComplianceRules as Record;
-use Motomedialab\Compliance\Repositories\CompliantModelsRepository;
+use Motomedialab\Compliance\Repositories\ComplianceModelsRepository;
 
 class ComplianceCheckCommand extends Command
 {
     protected $signature = 'compliance:check';
     protected $description = 'Check for non-conforming compliance records and mark them for deletion';
 
-    public function handle(CompliantModelsRepository $repository): int
+    public function handle(ComplianceModelsRepository $repository): int
     {
         $hasErrors = false;
 
@@ -31,7 +31,7 @@ class ComplianceCheckCommand extends Command
     /**
      * @throws Exception
      */
-    protected function processModel(CompliantModelsRepository $repository, string $model): void
+    protected function processModel(ComplianceModelsRepository $repository, string $model): void
     {
         // get our records that meet our criteria
         $records = $repository->getModelsByClassName($model, whereDoesntHaveCheck: true)
