@@ -25,6 +25,8 @@ beforeEach(function () {
 });
 
 it('wont delete any records when there arent any', function () {
+    TestModel::factory()->active()->create();
+
     $this->artisan(CompliancePruneCommand::class)
         ->expectsOutput('No records to prune for ' . TestModel::class)
         ->assertExitCode(0);
