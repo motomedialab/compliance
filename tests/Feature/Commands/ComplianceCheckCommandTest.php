@@ -26,7 +26,6 @@ beforeEach(function () {
 
 describe('ComplianceCheckCommand', function () {
     it('can check for non-conforming compliance records and mark them for deletion', function () {
-
         Event::fake();
 
         // create five models that dont need to be deleted

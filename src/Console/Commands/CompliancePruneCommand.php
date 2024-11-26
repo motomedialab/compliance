@@ -18,9 +18,9 @@ class CompliancePruneCommand extends Command
             $count = 0;
 
             $records = ComplianceCheck::query()
-                ->where('model_type', Relation::getMorphAlias($model))
+                ->where('model_type', $this->getMorphAlias($model))
                 ->where('deletion_date', '<', now())
-                ->with(['model' => fn ($query) => (new $model)->complianceQueryBuilder($query)])
+                ->with(['model' => fn ($query) => (new $model())->complianceQueryBuilder($query)])
                 ->cursor();
 
             if ($records->isEmpty()) {
@@ -44,4 +44,12 @@ class CompliancePruneCommand extends Command
         });
         return 0;
     }
+
+    protected function getMorphAlias(string $model): string
+    {
+        $map = array_flip(Relation::morphMap());
+
+        return $map[$model] ?? $model;
+    }
+
 }
