@@ -8,9 +8,6 @@ use Motomedialab\Compliance\Events\ComplianceDeleting;
 use Motomedialab\Compliance\Models\ComplianceCheck;
 use Motomedialab\Compliance\Tests\Stubs\Models\TestModel;
 
-covers(CompliancePruneCommand::class);
-
-
 beforeEach(function () {
     config()->set('compliance.models', [
         TestModel::class => [
