@@ -14,7 +14,7 @@ use Motomedialab\Compliance\Models\ComplianceCheck;
  * @mixin Model
  * @mixin HasComplianceRules
  */
-trait ComplianceRules
+trait ComplianceRules // @phpstan-ignore trait.unused
 {
     public static function bootComplianceRules(): void
     {
