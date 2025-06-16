@@ -3,20 +3,20 @@
 namespace Motomedialab\Compliance\Contracts;
 
 use Carbon\CarbonInterface;
-use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 /**
  * @mixin Model
  */
-interface HasComplianceRules
+interface HasCompliance
 {
     /**
      * The query builder used to find non-compliant models / models
      * that should be deleted.
      */
-    public function complianceQueryBuilder(Builder|null $builder = null): Builder;
+    public function complianceQueryBuilder(): Builder;
 
     /**
      * The default column to use for compliance checks.

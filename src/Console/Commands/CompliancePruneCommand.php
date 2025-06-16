@@ -3,7 +3,7 @@
 namespace Motomedialab\Compliance\Console\Commands;
 
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Motomedialab\Compliance\Contracts\HasComplianceRules;
+use Motomedialab\Compliance\Contracts\HasCompliance;
 use Motomedialab\Compliance\Models\ComplianceCheck;
 use Motomedialab\Compliance\Repositories\ComplianceModelsRepository;
 
@@ -20,7 +20,7 @@ class CompliancePruneCommand extends Command
             $records = ComplianceCheck::query()
                 ->where('model_type', $this->getMorphAlias($model))
                 ->where('deletion_date', '<', now())
-                ->with(['model' => fn ($query) => (new $model())->complianceQueryBuilder($query)])
+                ->with(['model' => fn () => (new $model())->complianceQueryBuilder()])
                 ->cursor();
 
             if ($records->isEmpty()) {
@@ -31,10 +31,9 @@ class CompliancePruneCommand extends Command
             $this->info('Processing ' . $model . ' records');
 
             $this->withProgressBar($records, function (ComplianceCheck $record) use (&$count): void {
-                if ($record->model instanceof HasComplianceRules && $record->model->complianceMeetsDeletionCriteria()) {
+                if ($record->model instanceof HasCompliance && $record->model->complianceMeetsDeletionCriteria()) {
                     ++$count;
                     $record->model->complianceDeleteRecord();
-                    return;
                 }
 
                 $record->delete();

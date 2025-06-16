@@ -17,7 +17,7 @@ beforeEach(function () {
     config()->set('compliance.models', [
         TestModel::class => [
             'column' => 'created_at',
-        ]
+        ],
     ]);
 
     Schema::create('test_models', function (Blueprint $table) {

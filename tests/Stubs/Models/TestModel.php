@@ -4,13 +4,13 @@ namespace Motomedialab\Compliance\Tests\Stubs\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Motomedialab\Compliance\Contracts\HasComplianceRules;
+use Motomedialab\Compliance\Contracts\HasCompliance;
 use Motomedialab\Compliance\Tests\Stubs\Factories\TestModelFactory;
-use Motomedialab\Compliance\Traits\ComplianceRules;
+use Motomedialab\Compliance\Traits\Compliance;
 
-class TestModel extends Model implements HasComplianceRules
+class TestModel extends Model implements HasCompliance
 {
-    use ComplianceRules;
+    use Compliance;
     use HasFactory;
 
     protected $guarded = [];

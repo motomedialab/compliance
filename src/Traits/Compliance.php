@@ -3,30 +3,31 @@
 namespace Motomedialab\Compliance\Traits;
 
 use Carbon\CarbonInterface;
-use Illuminate\Contracts\Database\Query\Builder;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Motomedialab\Compliance\Contracts\HasComplianceRules;
 use Motomedialab\Compliance\Events;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Contracts\Database\Query\Builder;
 use Motomedialab\Compliance\Models\ComplianceCheck;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Motomedialab\Compliance\Contracts\HasCompliance;
 
 /**
  * @mixin Model
- * @mixin HasComplianceRules
+ * @mixin HasCompliance
  */
-trait ComplianceRules // @phpstan-ignore trait.unused
+trait Compliance // @phpstan-ignore trait.unused
 {
     public static function bootComplianceRules(): void
     {
-        static::deleting(fn (HasComplianceRules $model) => $model->complianceCheckRecord()->delete());
+        static::deleting(fn (HasCompliance $model) => $model->complianceCheckRecord()->delete());
     }
 
     /**
      * The default query builder used by the compliance package.
      * This gives an opportunity to scope down your query.
      */
-    public function complianceQueryBuilder(Builder|null $builder = null): Builder {
-        return ($builder ?? $this->newQuery())
+    public function complianceQueryBuilder(): Builder
+    {
+        return $this->newQuery()
             ->where($this->complianceCheckColumn(), '<', now()->subDays($this->complianceDeleteAfterDays()));
     }
 
@@ -62,6 +63,14 @@ trait ComplianceRules // @phpstan-ignore trait.unused
     }
 
     /**
+     * Whether a record should be force deleted or not by default.
+     */
+    public function complianceShouldForceDelete(): int
+    {
+        return config('compliance.models.' . static::class . '.force_delete', true);
+    }
+
+    /**
      * Called by the compliance check command when scheduling
      * deletion of the model. This emits an event that can be used
      * to email the user, for example - notifying them that their
@@ -85,17 +94,13 @@ trait ComplianceRules // @phpstan-ignore trait.unused
      */
     public function complianceDeleteRecord(): void
     {
-        if (!$this->complianceMeetsDeletionCriteria()) {
-            // our record is compliant again. abort the deletion!
-            $this->complianceCheckRecord()->delete();
+        event(new Events\ComplianceDeleting($this));
+
+        if (!$this->beforeComplianceDeletion()) {
             return;
         }
 
-        event(new Events\ComplianceDeleting($this));
-
-        if ($this->beforeComplianceDeletion()) {
-            $this->forceDelete();
-        }
+        $this->complianceShouldForceDelete() ? $this->forceDelete() : $this->delete();
     }
 
     /**
@@ -116,6 +121,9 @@ trait ComplianceRules // @phpstan-ignore trait.unused
     /**
      * An opportunity to perform additional actions
      * and hook onto this method right before deleting the record.
+     *
+     * This method must return a boolean value. True will continue
+     * with the model deletion, and false will abort the deletion.
      *
      * @return bool
      */

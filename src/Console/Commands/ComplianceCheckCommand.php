@@ -3,7 +3,7 @@
 namespace Motomedialab\Compliance\Console\Commands;
 
 use Exception;
-use Motomedialab\Compliance\Contracts\HasComplianceRules as Record;
+use Motomedialab\Compliance\Contracts\HasCompliance as Record;
 use Motomedialab\Compliance\Repositories\ComplianceModelsRepository;
 
 class ComplianceCheckCommand extends Command
