@@ -5,7 +5,7 @@ namespace Motomedialab\Compliance\Traits;
 use Carbon\CarbonInterface;
 use Motomedialab\Compliance\Events;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Contracts\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Builder;
 use Motomedialab\Compliance\Models\ComplianceCheck;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Motomedialab\Compliance\Contracts\HasCompliance;
