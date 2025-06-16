@@ -24,6 +24,6 @@ it('will assume the defaults if not set in the config', function () {
 
     $model = new TestModel();
     expect($model->complianceGracePeriod())->toBe(15)
-        ->and($model->complianceCheckColumn())->toBe('last_login_at')
+        ->and($model->complianceCheckColumn())->toBe('updated_at')
         ->and($model->complianceDeleteAfterDays())->toBe(365 * 3);
 });

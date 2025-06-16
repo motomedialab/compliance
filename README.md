@@ -1,158 +1,205 @@
-# MotoMediaLab Compliance
+# Compliance: Your Automated Data Retention Guardian
 
-MotoMediaLab compliance is a highly configurable package that helps
-you to stay on the right side of modern data regulations by automatically
-deleting records that are no longer necessary to be stored. For example, a user
-that hasn't logged in to your system in three years.
+In today's world of data privacy regulations like GDPR, you can't hold onto user data forever. But manually
+tracking and deleting old records is a headache waiting to happen. Compliance is a configurable
+Laravel package that automates this process, ensuring you stay on the right side of the law by
+effortlessly deleting records that are no longer needed.
 
-## How does it work?
+Think of it as a fire-and-forget solution for data retention. Set up your rules, and let Compliance handle the rest.
 
-This package provides an interface and a trait that can be applied to any model.
-These have a series of methods that you can modify in order to change the desired
-functionality on a per-model basis.
+## How It Works: The Two-Step Deletion Process
 
-By default, the package will look for a `last_login_at` column on the model and
-queue the record for deletion if it's older than the configured number of days
-(defaults to 365 * 3 / 3 years). The `last_login_at` is of course geared
-towards a `User` model, but the query is completely customisable per model.
+Compliance operates on a safe, two-step cycle to ensure records are never deleted by mistake.
+This gives you a grace period to act, for instance, by notifying a user that their account is about to be removed.
 
-### Scheduled tasks
+1.  **The Check (`artisan compliance:check`)**:
+    * Every day, a scheduled command runs through your specified models (like `User`).
+    * It looks for records that meet your defined deletion criteria (e.g., users who haven't logged in for 3 years).
+    * When a record matches, Compliance creates a `ComplianceCheck` entry in your database, marking the record with a future deletion date.
+    * At this point, the `ComplianceRecordPendingDeletion` event is fired. This is your chance to hook in and, for example, send a notification email.
 
-Two commands are automatically scheduled, one for checks and one for pruning.
-
-#### The check command `compliance:check`
-
-On a daily basis, the check job runs through all of your defined models and searches for records
-that meet the deletion criteria. If the criteria is met, it'll create a `ComplianceCheck`
-model. This will also emit a `ComplianceRecordPendingDeletion` event.
-This `ComplianceCheck` model also stores the date on which the record should be deleted.
-
-#### The prune command `compliance:prune`
-
-On a daily basis, the prune job runs through all of the `ComplianceCheck` records that
-have exceeded the `deletion_date` date. Much like the check job, it'll then once again check
-for compliance. If the deletion criteria is still met, it'll delete the model and the associated
-check record. Before deletion, the `ComplianceDeleting` event will be emitted.
-
-### Events
-
-The package emits two events, `ComplianceRecordPendingDeletion` which is emitted when a model
-is marked for deletion and `ComplianceDeleting` which is emitted just before the model is deleted.
-
-These events allow you to easily take action or notify the customer that their account will
-be closed without their action.
+2.  **The Prune (`artisan compliance:prune`)**:
+    * A second daily command scans for `ComplianceCheck` records where the deletion date has passed.
+    * It performs a final check on the model to ensure it *still* meets the deletion criteria. This is a safety net... If a user logs in after being marked for deletion, their account will be spared.
+    * If the criteria are still met, the `ComplianceDeleting` event is fired just before the model is permanently deleted.
 
 ## Installation
 
-You can install the package via composer:
+Getting started is easy, just follow these three steps...
 
-```bash
-composer require motomedialab/compliance
-```
+1.  **Install via Composer:**
+    ```bash
+    composer require motomedialab/compliance
+    ```
 
-After installing the package, you'll need to publish the configuration file. From here, you can
-specify the models that should be checked for compliance. You'll also need to run the migrations.
+2.  **Publish Configuration & Run Migrations:**
+    Publish the configuration file to specify which models to monitor. Then, run the migrations to create the `compliance_checks` table.
+    ```bash
+    php artisan vendor:publish --provider="Motomedialab\Compliance\Providers\ComplianceServiceProvider" --tag="config"
+    php artisan migrate
+    ```
 
-```bash
-php artisan vendor:publish compliance
-php artisan migrate
-```
+## Quick Start: The Basic User Model
 
-## Example
-
-Example model:
+Out of the box, the package is configured to handle a typical `User` model. Just implement the `HasCompliance` contract and use the `ComplianceRules` trait.
 
 ```php
+// app/Models/User.php
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
-use Motomedialab\Compliance\Traits\ComplianceRules;
-use Motomedialab\Compliance\Contracts\HasComplianceRules;
+use Motomedialab\Compliance\Traits\Compliance;
+use Motomedialab\Compliance\Contracts\HasCompliance;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class User implements HasComplianceRules
+class User extends Authenticatable implements HasCompliance
 {
-    use ComplianceRules;    
+    use Compliance;
+    // ... your other model code
 }
 ```
 
-The above implementation will use the default configuration. It'll search for all users
-that have a `last_login_at` column that is older than 3 years.
-
-## Configuration
-
-The configuration file is located at `config/compliance.php`. Here you can specify the models
-that should be checked for compliance. You can also specify the number of days that a record
-should be kept before deletion and the grace period between 'checking' and deletion.
+Next, add your `User` model to the `config/compliance.php` file.
 
 ```php
+// config/compliance.php
 return [
     'models' => [
         App\Models\User::class => [
-            // the default date column to check on
+            // The column to check
             'column' => 'last_login_at',
-            // the number of days (relative to `column`) before a record will looked at for deletion
-            'delete_after_days' => 365 * 3,
-            // the number of days between the record being marked for deletion and actually being deleted
-            'deletion_grace_period' => 15,
+            // How old the record must be to be considered for deletion
+            'delete_after_days' => 365 * 3, // 3 years
+            // The grace period between being marked and being deleted
+            'deletion_grace_period' => 15 // 15 days
         ],
     ],
 ];
 ```
-## Advanced configuration
 
-There are a number of methods that you can override in the `ComplianceRules` trait. These methods allow you
-to customise the query that is run, the checks that are performed, and most importantly, an additional check
-to see if a record should be deleted.
+And that's it! The package will now automatically schedule users for deletion if their `last_login_at` date is over three years old.
+
+## Advanced Scenarios & Powerful Examples
+
+The real power of this package lies in its flexibility. You can override several methods from the `ComplianceRules` trait to build highly custom logic.
+
+### Example 1: Deleting Only Users Who Have *Never* Logged In
+
+You might want to clean up accounts that were created but never used. You can override the `complianceQueryBuilder` method to define a completely custom query.
 
 ```php
-namespace App\Models;
-
+// app/Models/User.php
 use Illuminate\Database\Eloquent\Builder;
-use Motomedialab\Compliance\Traits\ComplianceRules;
-use Motomedialab\Compliance\Contracts\HasComplianceRules;
 
-class User implements HasComplianceRules
+class User extends Authenticatable implements HasCompliance
 {
-    use ComplianceRules;
-    
-    // override to only delete users that have never logged in
-    public function complianceQueryBuilder() : Builder
+    use Compliance;
+
+    /**
+     * Override the default query to only find users who have never logged in.
+     */
+    public function complianceQueryBuilder(): Builder
     {
-        // make sure you eager load any relationships that you need!
-        return $this->newQuery()
-            ->with('subscriptions')
-            ->whereNull('last_login_at');    
+        // Use the newQuery() method on the model for a clean builder instance.
+        return $this->newQuery()->whereNull('last_login_at');
     }
-    
-    // the default column to check against
-    // (irrelevant if you are already overriding complianceQueryBuilder)
-    public function complianceCheckColumn() : string
-    {
-        return 'last_login_at';
-    }
-    
-    // manipulate the number of days before a record is marked for deletion
-    // (irrelevant if you are already overriding complianceQueryBuilder)
-    public function complianceDeleteAfterDays() : int
-    {
-       return 365;
-    }
-    
-    // manipulate the number of days between marking for deletion
-    // and actually deleting the model
-    public function complianceGracePeriod() : int
-    {
-        return 50;
-    }
-    
-    // here you can set a boolean flag to assert
-    // whether it should be possible to delete the record.
-    // this will be checked both initially and right before the record
-    // is deleted.
+}
+```
+
+### Example 2: Protecting VIPs or Active Subscribers
+
+You never want to accidentally delete a paying customer. The `complianceMeetsDeletionCriteria` method is your
+safety check, which runs both during the initial check and right before the final deletion.
+
+```php
+// app/Models/User.php
+class User extends Authenticatable implements HasCompliance
+{
+    use Compliance;
+
+    /**
+     * This method is the final gatekeeper.
+     * Only return true if the record can be safely deleted.
+     */
     public function complianceMeetsDeletionCriteria(): bool
     {
-        // example: only delete if a user has no subscriptions.
-        return $this->subscriptions->count() === 0;
+        // Don't delete if the user is an admin or has an active subscription.
+        if ($this->is_admin || $this->hasActiveSubscription()) {
+            return false;
+        }
+        return true;
     }
+}
+```
+
+### Example 3: Notifying Users of Pending Deletion
+
+Compliance fires events to let you hook into the lifecycle. Here’s how you can listen for the `ComplianceRecordPendingDeletion` event to email a user.
+
+First, create a listener:
+`php artisan make:listener NotifyUserOfPendingDeletion`
+
+Then, register it in your `EventServiceProvider`:
+
+```php
+// app/Providers/EventServiceProvider.php
+protected $listen = [
+    \Motomedialab\Compliance\Events\ComplianceRecordPendingDeletion::class => [
+        \App\Listeners\NotifyUserOfPendingDeletion::class,
+    ],
+];
+```
+
+Finally, implement the listener's logic:
+
+```php
+// app/Listeners/NotifyUserOfPendingDeletion.php
+namespace App\Listeners;
+
+use Illuminate\Support\Facades\Mail;
+use App\Mail\AccountDeletionWarning;
+use Motomedialab\Compliance\Events\ComplianceRecordPendingDeletion;
+
+class NotifyUserOfPendingDeletion
+{
+    public function handle(ComplianceRecordPendingDeletion $event): void
+    {
+        $user = $event->record->model;
+        $deletionDate = $event->record->deletion_date;
+
+        // Send an email to the user
+        Mail::to($user)->send(new AccountDeletionWarning($user, $deletionDate));
+    }
+}
+```
+
+### Example 4: Cleaning Up Old Log Entries
+
+This package isn't just for users. You can apply it to any model. Imagine you have a `Log` model and you only want to keep records for 90 days.
+
+```php
+// config/compliance.php
+'models' => [
+    // ... other models
+    App\Models\Log::class => [
+        'column' => 'created_at',
+        'delete_after_days' => 90,
+        'deletion_grace_period' => 0 // Delete immediately
+    ],
+],
+```
+
+Then, simply apply the trait and interface to your `Log` model.
+
+```php
+// app/Models/Log.php
+namespace App\Models;
+
+use Motomedialab\Compliance\Traits\Compliance;
+use Motomedialab\Compliance\Contracts\HasCompliance;
+use Illuminate\Database\Eloquent\Model;
+
+class Log extends Model implements HasCompliance
+{
+    use Compliance;
 }
 ```

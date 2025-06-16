@@ -3,24 +3,30 @@
 namespace Motomedialab\Compliance\Console\Commands;
 
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Motomedialab\Compliance\Contracts\HasComplianceRules;
+use Motomedialab\Compliance\Contracts\HasCompliance;
 use Motomedialab\Compliance\Models\ComplianceCheck;
 use Motomedialab\Compliance\Repositories\ComplianceModelsRepository;
 
 class CompliancePruneCommand extends Command
 {
-    protected $signature = 'compliance:prune';
+    protected $signature = 'compliance:prune {--dry-run : Simulate the check without making any changes}';
     protected $description = 'Prune models that have been marked for compliance deletion';
+
+    private bool $isDryRun = false;
 
     public function handle(ComplianceModelsRepository $repository): int
     {
+        if ($this->isDryRun = (bool)$this->option('dry-run')) {
+            $this->warn('Running in dry-run mode. No records will be deleted.');
+        }
+
         $this->getModels()->each(function (string $model): void {
             $count = 0;
 
             $records = ComplianceCheck::query()
                 ->where('model_type', $this->getMorphAlias($model))
                 ->where('deletion_date', '<', now())
-                ->with(['model' => fn ($query) => (new $model())->complianceQueryBuilder($query)])
+                ->with(['model' => fn () => (new $model())->complianceQueryBuilder()])
                 ->cursor();
 
             if ($records->isEmpty()) {
@@ -31,16 +37,21 @@ class CompliancePruneCommand extends Command
             $this->info('Processing ' . $model . ' records');
 
             $this->withProgressBar($records, function (ComplianceCheck $record) use (&$count): void {
-                if ($record->model instanceof HasComplianceRules && $record->model->complianceMeetsDeletionCriteria()) {
+                if ($record->model instanceof HasCompliance && $record->model->complianceMeetsDeletionCriteria()) {
                     ++$count;
-                    $record->model->complianceDeleteRecord();
-                    return;
+
+                    if (!$this->isDryRun) {
+                        $record->model->complianceDeleteRecord();
+                    }
                 }
 
-                $record->delete();
+                if (!$this->isDryRun) {
+                    $record->delete();
+                }
             });
 
-            $this->info('Deleted ' . $count . ' non-compliant ' . $model . ' records');
+            $action = $this->isDryRun ? 'would be' : 'were';
+            $this->info("Found {$count} non-compliant {$model} records that {$action} deleted.");
         });
         return 0;
     }

@@ -4,7 +4,7 @@ namespace Motomedialab\Compliance\Repositories;
 
 use Exception;
 use Illuminate\Support\LazyCollection;
-use Motomedialab\Compliance\Contracts\HasComplianceRules;
+use Motomedialab\Compliance\Contracts\HasCompliance;
 
 class ComplianceModelsRepository
 {
@@ -33,7 +33,7 @@ class ComplianceModelsRepository
     /**
      * @throws Exception
      */
-    private function getModel(string $className): HasComplianceRules
+    private function getModel(string $className): HasCompliance
     {
         if (!class_exists($className)) {
             throw new Exception($className . ' does not exist');
@@ -41,7 +41,7 @@ class ComplianceModelsRepository
 
         $model = (new $className());
 
-        if (!$model instanceof HasComplianceRules) {
+        if (!$model instanceof HasCompliance) {
             throw new Exception($className . ' must implement HasComplianceRules');
         }
 

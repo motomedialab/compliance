@@ -17,7 +17,7 @@ beforeEach(function () {
     config()->set('compliance.models', [
         TestModel::class => [
             'column' => 'created_at',
-        ]
+        ],
     ]);
 
     Schema::create('test_models', function (Blueprint $table) {
@@ -27,6 +27,14 @@ beforeEach(function () {
 
         $table->timestamps();
     });
+});
+
+it('will run the prune in dry run mode', function () {
+    TestModel::factory()->active()->create();
+
+    $this->artisan(CompliancePruneCommand::class, ['--dry-run' => true])
+        ->expectsOutput('Running in dry-run mode. No records will be deleted.')
+        ->assertExitCode(0);
 });
 
 it('wont delete any records when there arent any', function () {
@@ -45,23 +53,20 @@ it('it will check for compliance once again before deleting', function () {
     ComplianceCheck::create(['model_type' => TestModel::class, 'model_id' => 1, 'deletion_date' => now()->subDay()]);
 
     $this->artisan(CompliancePruneCommand::class)
-        ->expectsOutput('Deleted 0 non-compliant ' . TestModel::class . ' records')
+        ->expectsOutput('Found 0 non-compliant Motomedialab\Compliance\Tests\Stubs\Models\TestModel records that were deleted.')
         ->assertExitCode(0);
 
     Event::assertNotDispatched(ComplianceDeleting::class);
 });
 
 it('can handle morph aliases', function () {
-
-    Relation::morphMap([
-        'test' => TestModel::class,
-    ]);
+    Relation::morphMap(['test' => TestModel::class]);
 
     TestModel::factory()->deletable()->create(['allow_delete' => true]);
     ComplianceCheck::create(['model_type' => 'test', 'model_id' => 1, 'deletion_date' => now()->subDay()]);
 
     $this->artisan(CompliancePruneCommand::class)
-        ->expectsOutput('Deleted 1 non-compliant ' . TestModel::class . ' records')
+        ->expectsOutput('Found 1 non-compliant Motomedialab\Compliance\Tests\Stubs\Models\TestModel records that were deleted.')
         ->assertExitCode(0);
 });
 
@@ -73,7 +78,7 @@ it('it will delete and emit event for deleted records', function () {
     ComplianceCheck::create(['model_type' => TestModel::class, 'model_id' => 1, 'deletion_date' => now()->subDay()]);
 
     $this->artisan(CompliancePruneCommand::class)
-        ->expectsOutput('Deleted 1 non-compliant ' . TestModel::class . ' records')
+        ->expectsOutput('Found 1 non-compliant Motomedialab\Compliance\Tests\Stubs\Models\TestModel records that were deleted.')
         ->assertExitCode(0);
 
     Event::assertDispatchedTimes(ComplianceDeleting::class);

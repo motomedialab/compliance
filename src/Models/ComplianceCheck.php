@@ -4,10 +4,10 @@ namespace Motomedialab\Compliance\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Motomedialab\Compliance\Contracts\HasComplianceRules;
+use Motomedialab\Compliance\Contracts\HasCompliance;
 
 /**
- * @property null|HasComplianceRules $model
+ * @property null|HasCompliance $model
  */
 class ComplianceCheck extends Model
 {

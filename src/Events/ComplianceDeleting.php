@@ -2,11 +2,11 @@
 
 namespace Motomedialab\Compliance\Events;
 
-use Motomedialab\Compliance\Contracts\HasComplianceRules;
+use Motomedialab\Compliance\Contracts\HasCompliance;
 
 class ComplianceDeleting
 {
-    public function __construct(public HasComplianceRules $model)
+    public function __construct(public HasCompliance $model)
     {
         //
     }

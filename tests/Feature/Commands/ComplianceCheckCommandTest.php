@@ -24,25 +24,31 @@ beforeEach(function () {
     });
 });
 
-describe('ComplianceCheckCommand', function () {
-    it('can check for non-conforming compliance records and mark them for deletion', function () {
-        Event::fake();
+it('will run the check in dry run mode', function () {
+    TestModel::factory()->active()->create();
 
-        // create five models that dont need to be deleted
-        TestModel::factory(count: 5)->active()->create();
+    $this->artisan(ComplianceCheckCommand::class, ['--dry-run' => true])
+        ->expectsOutput('Running in dry-run mode. No records will be scheduled for deletion.')
+        ->assertExitCode(0);
+});
 
-        // create four models that should be scheduled for deletion
-        TestModel::factory(count: 4)->deletable()->create();
+it('can check for non-conforming compliance records and mark them for deletion', function () {
+    Event::fake();
 
-        // and one that cant be deleted
-        TestModel::factory()->deletable()->state(['allow_delete' => false])->create();
+    // create five models that dont need to be deleted
+    TestModel::factory(count: 5)->active()->create();
 
-        $this->artisan(ComplianceCheckCommand::class)
-            ->expectsOutput('Scheduled 4 Motomedialab\Compliance\Tests\Stubs\Models\TestModel records for deletion')
-            ->assertExitCode(0);
+    // create four models that should be scheduled for deletion
+    TestModel::factory(count: 4)->deletable()->create();
 
-        Event::assertDispatchedTimes(ComplianceRecordPendingDeletion::class, 4);
+    // and one that cant be deleted
+    TestModel::factory()->deletable()->state(['allow_delete' => false])->create();
 
-        expect(ComplianceCheck::count())->toBe(4);
-    });
+    $this->artisan(ComplianceCheckCommand::class)
+        ->expectsOutput('Scheduled 4 Motomedialab\Compliance\Tests\Stubs\Models\TestModel records for deletion')
+        ->assertExitCode(0);
+
+    Event::assertDispatchedTimes(ComplianceRecordPendingDeletion::class, 4);
+
+    expect(ComplianceCheck::count())->toBe(4);
 });
