@@ -42,8 +42,7 @@ class ComplianceCheckCommand extends Command
 
         // and schedule them for deletion
         $records->each(
-            fn (Record $model) => $model
-            ->complianceScheduleDeletion(now()->addDays($model->complianceGracePeriod()))
+            fn (Record $model) => $model->complianceScheduleDeletion(now()->addDays($model->complianceGracePeriod()))
         );
 
         $this->info('Scheduled ' . $count . ' ' . $model . ' records for deletion');

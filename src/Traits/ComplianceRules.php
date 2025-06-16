@@ -3,7 +3,7 @@
 namespace Motomedialab\Compliance\Traits;
 
 use Carbon\CarbonInterface;
-use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Motomedialab\Compliance\Contracts\HasComplianceRules;
@@ -18,13 +18,14 @@ trait ComplianceRules // @phpstan-ignore trait.unused
 {
     public static function bootComplianceRules(): void
     {
-        static::deleting(function (HasComplianceRules $model) {
-            $model->complianceCheckRecord()->delete();
-        });
+        static::deleting(fn (HasComplianceRules $model) => $model->complianceCheckRecord()->delete());
     }
 
-    public function complianceQueryBuilder(Builder|null $builder = null): Builder
-    {
+    /**
+     * The default query builder used by the compliance package.
+     * This gives an opportunity to scope down your query.
+     */
+    public function complianceQueryBuilder(Builder|null $builder = null): Builder {
         return ($builder ?? $this->newQuery())
             ->where($this->complianceCheckColumn(), '<', now()->subDays($this->complianceDeleteAfterDays()));
     }
@@ -34,21 +35,38 @@ trait ComplianceRules // @phpstan-ignore trait.unused
         return $this->morphOne(ComplianceCheck::class, 'model');
     }
 
+    /**
+     * The default column we'll use to check if a record is ready for deletion.
+     * Typically, it'll look at the updated_at column.
+     */
     public function complianceCheckColumn(): string
     {
-        return config('compliance.models.' . static::class . '.column', 'last_login_at');
+        return config('compliance.models.' . static::class . '.column', 'updated_at');
     }
 
+    /**
+     * The default number of days this record will be looked at for deletion.
+     */
     public function complianceDeleteAfterDays(): int
     {
         return config('compliance.models.' . static::class . '.delete_after_days', 365 * 3);
     }
 
+    /**
+     * The default grace period. When a deletion is scheduled, a record
+     * of the deletion will be set in the database, with the calculated deletion date.
+     */
     public function complianceGracePeriod(): int
     {
         return config('compliance.models.' . static::class . '.deletion_grace_period', 15);
     }
 
+    /**
+     * Called by the compliance check command when scheduling
+     * deletion of the model. This emits an event that can be used
+     * to email the user, for example - notifying them that their
+     * account is scheduled for deletion.
+     */
     public function complianceScheduleDeletion(CarbonInterface $deleteOn): void
     {
         $record = $this->complianceCheckRecord()->create([
@@ -58,15 +76,52 @@ trait ComplianceRules // @phpstan-ignore trait.unused
         event(new Events\ComplianceRecordPendingDeletion($record));
     }
 
+    /**
+     * This method is called by the scheduled prune command. It offers
+     * an additional opportunity to prevent the deletion.
+     *
+     * It also emits an event and calls on the beforeComplianceDeletion()
+     * method against the model - just to be 100% sure!
+     */
     public function complianceDeleteRecord(): void
     {
+        if (!$this->complianceMeetsDeletionCriteria()) {
+            // our record is compliant again. abort the deletion!
+            $this->complianceCheckRecord()->delete();
+            return;
+        }
+
         event(new Events\ComplianceDeleting($this));
 
-        $this->forceDelete();
+        if ($this->beforeComplianceDeletion()) {
+            $this->forceDelete();
+        }
     }
 
+    /**
+     * When running the scheduled check for records that meet the retention criteria,
+     * this method will be called. This is a further opportunity to perform additional
+     * checks before scheduling the record for deletion.
+     *
+     * This method will be called an additional time, right before deletion - just
+     * in case something has changed, and it shouldn't be deleted.
+     *
+     * @return bool
+     */
     public function complianceMeetsDeletionCriteria(): bool
     {
         return true;
     }
+
+    /**
+     * An opportunity to perform additional actions
+     * and hook onto this method right before deleting the record.
+     *
+     * @return bool
+     */
+    public function beforeComplianceDeletion(): bool
+    {
+        return true;
+    }
+
 }
