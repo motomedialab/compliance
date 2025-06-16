@@ -40,10 +40,14 @@ class CompliancePruneCommand extends Command
                 if ($record->model instanceof HasCompliance && $record->model->complianceMeetsDeletionCriteria()) {
                     ++$count;
 
-                    if (!$this->isDryRun) $record->model->complianceDeleteRecord();
+                    if (!$this->isDryRun) {
+                        $record->model->complianceDeleteRecord();
+                    }
                 }
 
-                if (!$this->isDryRun) $record->delete();
+                if (!$this->isDryRun) {
+                    $record->delete();
+                }
             });
 
             $action = $this->isDryRun ? 'would be' : 'were';
