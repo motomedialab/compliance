@@ -97,10 +97,9 @@ class User extends Authenticatable implements HasCompliance
     /**
      * Override the default query to only find users who have never logged in.
      */
-    public function complianceQueryBuilder(): Builder
+    public function complianceQueryBuilder(Builder $builder): Builder
     {
-        // Use the newQuery() method on the model for a clean builder instance.
-        return $this->newQuery()->whereNull('last_login_at');
+        return $builder->whereNull('last_login_at');
     }
 }
 ```

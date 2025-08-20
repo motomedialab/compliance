@@ -23,7 +23,7 @@ class ComplianceModelsRepository
         }
 
         return $model
-            ->complianceQueryBuilder()
+            ->complianceQueryBuilder($model->newQuery())
             ->with('complianceCheckRecord')
             ->when($whereDoesntHaveCheck, fn ($query) => $query->doesntHave('complianceCheckRecord'))
             ->when($whereHasCheck, fn ($query) => $query->has('complianceCheckRecord'))
