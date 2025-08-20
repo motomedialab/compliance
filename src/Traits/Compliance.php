@@ -25,10 +25,9 @@ trait Compliance // @phpstan-ignore trait.unused
      * The default query builder used by the compliance package.
      * This gives an opportunity to scope down your query.
      */
-    public function complianceQueryBuilder(): Builder
+    public function complianceQueryBuilder(Builder $builder): Builder
     {
-        return $this->newQuery()
-            ->where($this->complianceCheckColumn(), '<', now()->subDays($this->complianceDeleteAfterDays()));
+        return $builder->where($this->complianceCheckColumn(), '<', now()->subDays($this->complianceDeleteAfterDays()));
     }
 
     public function complianceCheckRecord(): MorphOne

@@ -23,18 +23,25 @@ class CompliancePruneCommand extends Command
         $this->getModels()->each(function (string $model): void {
             $count = 0;
 
-            $records = ComplianceCheck::query()
-                ->where('model_type', $this->getMorphAlias($model))
-                ->where('deletion_date', '<', now())
-                ->with(['model' => fn () => (new $model())->complianceQueryBuilder()])
-                ->cursor();
+            $modelName = $model;
+            $model = new $model();
 
-            if ($records->isEmpty()) {
-                $this->info('No records to prune for ' . $model);
+            if (!$model instanceof HasCompliance) {
                 return;
             }
 
-            $this->info('Processing ' . $model . ' records');
+            $records = ComplianceCheck::query()
+                ->where('model_type', $this->getMorphAlias($modelName))
+                ->where('deletion_date', '<', now())
+                ->with(['model' => fn ($builder) => $model->complianceQueryBuilder($builder)])
+                ->cursor();
+
+            if ($records->isEmpty()) {
+                $this->info('No records to prune for ' . $modelName);
+                return;
+            }
+
+            $this->info('Processing ' . $modelName . ' records');
 
             $this->withProgressBar($records, function (ComplianceCheck $record) use (&$count): void {
                 if ($record->model instanceof HasCompliance && $record->model->complianceMeetsDeletionCriteria()) {
@@ -51,13 +58,15 @@ class CompliancePruneCommand extends Command
             });
 
             $action = $this->isDryRun ? 'would be' : 'were';
-            $this->info("Found {$count} non-compliant {$model} records that {$action} deleted.");
+            $this->info("Found {$count} non-compliant {$modelName} records that {$action} deleted.");
         });
         return 0;
     }
 
-    protected function getMorphAlias(string $model): string
+    protected function getMorphAlias(string|object $model): string
     {
+        $model = is_object($model) ? get_class($model) : $model;
+
         $map = array_flip(Relation::morphMap());
 
         return $map[$model] ?? $model;
