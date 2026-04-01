@@ -36,14 +36,13 @@ class CompliancePruneCommand extends Command
                 ->with(['model' => fn ($builder) => $model->complianceQueryBuilder($builder)])
                 ->cursor();
 
-            if ($records->isEmpty()) {
-                $this->info('No records to prune for ' . $modelName);
-                return;
-            }
-
             $this->info('Processing ' . $modelName . ' records');
 
-            $this->withProgressBar($records, function (ComplianceCheck $record) use (&$count): void {
+            $hasRecords = false;
+
+            $this->withProgressBar($records, function (ComplianceCheck $record) use (&$count, &$hasRecords): void {
+                $hasRecords = true;
+
                 if ($record->model instanceof HasCompliance && $record->model->complianceMeetsDeletionCriteria()) {
                     ++$count;
 
@@ -57,8 +56,14 @@ class CompliancePruneCommand extends Command
                 }
             });
 
-            $action = $this->isDryRun ? 'would be' : 'were';
-            $this->info("Found {$count} non-compliant {$modelName} records that {$action} deleted.");
+            $this->newLine();
+
+            if (!$hasRecords && !$this->isDryRun) {
+                $this->info('No records to prune for ' . $modelName);
+            } else {
+                $action = $this->isDryRun ? 'would be' : 'were';
+                $this->info("Found {$count} non-compliant {$modelName} records that {$action} deleted.");
+            }
         });
         return 0;
     }

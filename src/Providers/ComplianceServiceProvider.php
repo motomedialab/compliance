@@ -53,12 +53,17 @@ class ComplianceServiceProvider extends ServiceProvider
             /** @var Schedule $schedule */
             $schedule = $this->app->make(Schedule::class);
 
-            $schedule->command(Commands\ComplianceCheckCommand::class)
-                ->dailyAt(config('compliance.schedule.check_time'));
-            $schedule->command(Commands\CompliancePruneCommand::class)
-                ->dailyAt(config('compliance.schedule.prune_time'));
+            $this->scheduleCommand($schedule, Commands\ComplianceCheckCommand::class, 'check');
+            $this->scheduleCommand($schedule, Commands\CompliancePruneCommand::class, 'prune');
         });
 
         return $this;
+    }
+
+    protected function scheduleCommand(Schedule $schedule, string $command, string $type): void
+    {
+        $time = config("compliance.schedule.{$type}_time", '00:00');
+
+        $schedule->command($command)->dailyAt($time);
     }
 }

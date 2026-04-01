@@ -1,12 +1,9 @@
 <?php
 
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Motomedialab\Compliance\Console\Commands\ComplianceCheckCommand;
 use Motomedialab\Compliance\Console\Commands\CompliancePruneCommand;
-use Motomedialab\Compliance\Events\ComplianceDeleting;
-use Motomedialab\Compliance\Events\ComplianceRecordPendingDeletion;
 use Motomedialab\Compliance\Models\ComplianceCheck;
 use Motomedialab\Compliance\Tests\Stubs\Models\SoftDeletableModel;
 use Motomedialab\Compliance\Tests\Stubs\Models\TestModel;

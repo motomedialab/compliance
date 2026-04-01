@@ -41,7 +41,7 @@ trait Compliance // @phpstan-ignore trait.unused
      */
     public function complianceCheckColumn(): string
     {
-        return config('compliance.models.' . static::class . '.column', 'updated_at');
+        return $this->complianceConfig('column', 'updated_at');
     }
 
     /**
@@ -49,7 +49,7 @@ trait Compliance // @phpstan-ignore trait.unused
      */
     public function complianceDeleteAfterDays(): int
     {
-        return config('compliance.models.' . static::class . '.delete_after_days', 365 * 3);
+        return (int) $this->complianceConfig('delete_after_days', 365 * 3);
     }
 
     /**
@@ -58,15 +58,23 @@ trait Compliance // @phpstan-ignore trait.unused
      */
     public function complianceGracePeriod(): int
     {
-        return config('compliance.models.' . static::class . '.deletion_grace_period', 15);
+        return (int) $this->complianceConfig('deletion_grace_period', 15);
     }
 
     /**
      * Whether a record should be force deleted or not by default.
      */
-    public function complianceShouldForceDelete(): int
+    public function complianceShouldForceDelete(): bool
     {
-        return config('compliance.models.' . static::class . '.force_delete', true);
+        return (bool) $this->complianceConfig('force_delete', true);
+    }
+
+    /**
+     * Fetch the configuration for this model.
+     */
+    protected function complianceConfig(string $key, mixed $default = null): mixed
+    {
+        return config('compliance.models.' . static::class . '.' . $key, $default);
     }
 
     /**
@@ -93,11 +101,11 @@ trait Compliance // @phpstan-ignore trait.unused
      */
     public function complianceDeleteRecord(): void
     {
-        event(new Events\ComplianceDeleting($this));
-
         if (!$this->beforeComplianceDeletion()) {
             return;
         }
+
+        event(new Events\ComplianceDeleting($this));
 
         $this->complianceShouldForceDelete() ? $this->forceDelete() : $this->delete();
     }

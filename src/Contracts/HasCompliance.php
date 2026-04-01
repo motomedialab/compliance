@@ -47,6 +47,17 @@ interface HasCompliance
     public function complianceMeetsDeletionCriteria(): bool;
 
     /**
+     * Determine if the record should be force deleted or not.
+     */
+    public function complianceShouldForceDelete(): bool;
+
+    /**
+     * A hook that is called right before deleting the record.
+     * Returns a boolean value if it is ok to continue with the deletion.
+     */
+    public function beforeComplianceDeletion(): bool;
+
+    /**
      * A helper method to schedule the deletion of the model.
      */
     public function complianceScheduleDeletion(CarbonInterface $deleteOn): void;
