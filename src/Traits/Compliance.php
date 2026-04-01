@@ -16,7 +16,7 @@ use Motomedialab\Compliance\Contracts\HasCompliance;
  */
 trait Compliance // @phpstan-ignore trait.unused
 {
-    public static function bootComplianceRules(): void
+    public static function bootCompliance(): void
     {
         static::deleting(fn (HasCompliance $model) => $model->complianceCheckRecord()->delete());
     }

@@ -17,11 +17,17 @@ class TestModel extends Model implements HasCompliance
 
     protected $casts = [
         'allow_delete' => 'boolean',
+        'allow_before_deletion' => 'boolean',
     ];
 
     public function complianceMeetsDeletionCriteria(): bool
     {
         return $this->allow_delete === true;
+    }
+
+    public function beforeComplianceDeletion(): bool
+    {
+        return $this->getAttribute('allow_before_deletion') ?? true;
     }
 
     protected static function newFactory(): TestModelFactory
