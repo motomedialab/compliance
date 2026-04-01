@@ -15,6 +15,10 @@ class ComplianceCheck extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'deletion_date' => 'datetime',
+    ];
+
     public function model(): MorphTo
     {
         return $this->morphTo()->withoutGlobalScopes();

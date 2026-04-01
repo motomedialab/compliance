@@ -42,7 +42,7 @@ class ComplianceModelsRepository
         $model = (new $className());
 
         if (!$model instanceof HasCompliance) {
-            throw new Exception($className . ' must implement HasComplianceRules');
+            throw new Exception($className . ' must implement HasCompliance');
         }
 
         return $model;

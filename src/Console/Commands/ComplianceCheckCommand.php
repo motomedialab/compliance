@@ -39,23 +39,27 @@ class ComplianceCheckCommand extends Command
      */
     protected function processModel(ComplianceModelsRepository $repository, string $model): void
     {
+        $count = 0;
+
         // get our records that meet our criteria
         $records = $repository->getModelsByClassName($model, whereDoesntHaveCheck: true)
             ->filter(fn (Record $model) => $model->complianceMeetsDeletionCriteria() === true);
 
-        // store a count
-        $count = $records->count();
-
         if ($this->isDryRun) {
+            $records->each(function (Record $model) use (&$count): void {
+                $count++;
+                $this->line('  - Model ID: ' . $model->getKey());
+            });
+
             $this->info('Found ' . $count . ' ' . $model . ' records that would be scheduled for deletion.');
-            $records->each(fn (Record $model) => $this->line('  - Model ID: ' . $model->getKey()));
             return;
         }
 
         // and schedule them for deletion
-        $records->each(
-            fn (Record $model) => $model->complianceScheduleDeletion(now()->addDays($model->complianceGracePeriod()))
-        );
+        $records->each(function (Record $model) use (&$count): void {
+            $count++;
+            $model->complianceScheduleDeletion(now()->addDays($model->complianceGracePeriod()));
+        });
 
         $this->info('Scheduled ' . $count . ' ' . $model . ' records for deletion');
     }
